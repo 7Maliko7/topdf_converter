@@ -1,8 +1,8 @@
 package main
 
 import (
-	"pdf-bot/internal/handler"
-	"pdf-bot/internal/config"
+	"topdf_converter/internal/handler"
+	"topdf_converter/internal/config"
 )
 
 func main() {

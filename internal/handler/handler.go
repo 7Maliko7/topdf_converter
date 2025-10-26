@@ -2,7 +2,7 @@ package handler
 
 import (
 	"log"
-	"pdf-bot/internal/service"
+	"topdf_converter/internal/service"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
