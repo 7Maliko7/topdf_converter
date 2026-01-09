@@ -1,0 +1,5 @@
+scrape_comfigs:
+  - job_name: 'telegram_bot'
+    static_configs:
+      -targets: ['localhost:9090']
+    metrics_path: '/metrics'
