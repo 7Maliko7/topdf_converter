@@ -6,23 +6,31 @@ type Keyboard struct {
 	Buttons [][]tgbotapi.KeyboardButton
 }
 
-func NewKeyboard()*Keyboard{
+func NewKeyboard() *Keyboard {
 	return &Keyboard{
 		Buttons: [][]tgbotapi.KeyboardButton{},
 	}
 }
 
-func(k *Keyboard) AddRow(buttons ...tgbotapi.KeyboardButton){
+func (k *Keyboard) AddRow(buttons ...tgbotapi.KeyboardButton) {
 	k.Buttons = append(k.Buttons, buttons)
 }
 
-func CreateButton(text string)tgbotapi.KeyboardButton{
+func CreateButton(text string) tgbotapi.KeyboardButton {
 	return tgbotapi.NewKeyboardButton(text)
 }
 
-func(k *Keyboard) GetMarkup() tgbotapi.ReplyKeyboardMarkup{
+func (k *Keyboard) GetMarkup() tgbotapi.ReplyKeyboardMarkup {
 	return tgbotapi.ReplyKeyboardMarkup{
-		Keyboard: k.Buttons,
+		Keyboard:       k.Buttons,
 		ResizeKeyboard: true,
 	}
+}
+
+func (k *Keyboard) CreateButtons() {
+	k.AddRow(CreateButton("Начать"))
+	k.AddRow(CreateButton("Очистить"))
+	k.AddRow(CreateButton("Завершить"))
+	k.AddRow(CreateButton("Новый файл"))
+	k.AddRow(CreateButton("Помощь"))
 }
