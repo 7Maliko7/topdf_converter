@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	hndl "topdf_converter/internal/handler"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -37,8 +38,7 @@ func NewBot(token string) *Bot {
 }
 
 func (b *Bot) Start(ctx context.Context, token string) {
-	photoBuffer := NewPhotoBuffer()
-	handler := NewHandler(b.bot, photoBuffer)
+	handler := hndl.NewHandler(b.bot)
 
 	kb := NewKeyboard()
 	kb.CreateButtons()
@@ -62,7 +62,7 @@ func (b *Bot) Start(ctx context.Context, token string) {
 
 }
 
-func CheckUpdates(bot *tgbotapi.BotAPI, update tgbotapi.Update, handler *Handler, kb *Keyboard) {
+func CheckUpdates(bot *tgbotapi.BotAPI, update tgbotapi.Update, handler *hndl.Handler, kb *Keyboard) {
 
 	if update.Message == nil {
 		return
@@ -84,17 +84,17 @@ func CheckUpdates(bot *tgbotapi.BotAPI, update tgbotapi.Update, handler *Handler
 	} else {
 		switch update.Message.Text {
 		case "Начать":
-			handler.Begin(chatID)
+			handler.Begin(chatID, userID)
 		case "Очистить":
 			handler.Clear(chatID, userID)
 		case "Завершить":
 			handler.Done(chatID, userID)
 		case "Новый файл":
-			handler.NewFile(chatID)
+			handler.NewFile(chatID,userID)
 		case "Помощь":
 			handler.Help(chatID)
 		case "/start":
-			handler.Start(chatID, kb)
+			handler.Start(chatID)
 		case "/help":
 			handler.Help(chatID)
 		case "/done":

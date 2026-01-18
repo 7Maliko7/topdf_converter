@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"topdf_converter/internal/service"
 	"topdf_converter/pkg/metrics"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -15,20 +16,25 @@ type Handler struct {
 	photoBuffer *PhotoBuffer
 }
 
-func NewHandler(bot *tgbotapi.BotAPI, photoBuffer *PhotoBuffer) *Handler {
+func NewHandler(bot *tgbotapi.BotAPI) *Handler {
+	photoBuffer := NewPhotoBuffer()
 	return &Handler{
 		bot:         bot,
 		photoBuffer: photoBuffer,
 	}
 }
 
-func (h *Handler) Start(chatID int64, kb *Keyboard) {
+func (h *Handler) Start(chatID int64) {
 	helloMsg := tgbotapi.NewMessage(chatID, "Привет, я твой бот-помощник по конвертации фото в pdf. Нажми кнопку \"Начать\", чтобы начать отправку фото")
-	helloMsg.ReplyMarkup = kb.GetMarkup()
 	h.bot.Send(helloMsg)
 }
 
-func (h *Handler) Begin(chatID int64) {
+func (h *Handler) Begin(chatID, userID int64) {
+	buf := h.photoBuffer.Get(userID)
+	if len(buf) > 0 {
+		h.bot.Send(tgbotapi.NewMessage(chatID, "Ты еще не закончил с предыдущим файлом. Нажми \"Завершить\" или \"Очистить\""))
+		return
+	}
 	h.bot.Send(tgbotapi.NewMessage(chatID, "Отправь мне изображения, чтобы создать PDF. После того, как отправишь все нужные фото, нажми \"Завершить\""))
 }
 
@@ -65,7 +71,7 @@ func (h *Handler) Done(chatID, userID int64) {
 			continue
 		}
 		url := file.Link(h.bot.Token)
-		if err := downloadPhoto(url, localPath); err != nil {
+		if err := service.DownloadPhoto(url, localPath); err != nil {
 			log.Printf("Ошибка скачивания фото: %v", err)
 			continue
 		}
@@ -73,7 +79,7 @@ func (h *Handler) Done(chatID, userID int64) {
 	}
 
 	pdfPath := filepath.Join(dir, "result.pdf")
-	if err := createPDFWithGoPDF(paths, pdfPath); err != nil {
+	if err := service.CreatePDFWithGoPDF(paths, pdfPath); err != nil {
 		log.Printf("Ошибка создания PDF: %v", err)
 		h.bot.Send(tgbotapi.NewMessage(chatID, "Ошибка при генерации PDF."))
 		os.RemoveAll(dir)
@@ -93,18 +99,34 @@ func (h *Handler) Done(chatID, userID int64) {
 		Name:   "photos.pdf",
 		Reader: f,
 	})
-	if _, err := h.bot.Send(doc); err != nil {
-		// if errors.As(err, "Bad Request: message text is empty") {
-
-		// }
-		//TODO is err = timeout "error_code":400,"description":"Bad Request: message text is empty" повторить оправку, сообщение об отпрвке
+	for i := 0; i < 3; i++ {
+		_, err := h.bot.Send(doc)
+		if err == nil {
+			metrics.PdfCount.Inc()
+			h.bot.Send(tgbotapi.NewMessage(chatID, "Твой PDF готов."))
+			return
+		}
+		tgErr, ok := err.(*tgbotapi.Error)
+		if !ok {
+			log.Printf("Ошибка отправки PDF: %v", err)
+			h.bot.Send(tgbotapi.NewMessage(chatID, "Ошибка при отправке PDF."))
+			return
+		}
+		if tgErr.Code == 400 && tgErr.Message == "Bad Request: message text is empty" {
+			continue
+		}
 		log.Printf("Ошибка отправки PDF: %v", err)
 		h.bot.Send(tgbotapi.NewMessage(chatID, "Ошибка при отправке PDF."))
+		return
 	}
-	metrics.PdfCount.Inc()
 }
 
-func (h *Handler) NewFile(chatID int64) {
+func (h *Handler) NewFile(chatID, userID int64) {
+	buf := h.photoBuffer.Get(userID)
+	if len(buf) > 0 {
+		h.bot.Send(tgbotapi.NewMessage(chatID, "Ты еще не закончил с предыдущим файлом. Нажми \"Завершить\" или \"Очистить\""))
+		return
+	}
 	h.bot.Send(tgbotapi.NewMessage(chatID, "Отправь мне изображения для нового файла. После того, как отправишь все нужные фото, нажми \"Завершить\""))
 }
 

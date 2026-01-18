@@ -10,16 +10,13 @@ import (
 	"topdf_converter/pkg/metrics"
 )
 
-//TODO
-//Контролируемая остановка сервера с метриками (грейсфул шатдаун)
-
 func main() {
 	config.ReadConfig("tokencfg.json")
 	token, err := config.GetToken()
 	if err != nil {
 		return
 	}
-	//goroutine
+
 	ctx, cancel := context.WithCancel(context.Background())
 
 	sig := make(chan os.Signal, 1)
