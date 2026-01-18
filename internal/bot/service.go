@@ -34,6 +34,7 @@ func createPDFWithGoPDF(images []string, outputPath string) error {
 
 	for _, img := range images {
 		pdf.AddPage()
+	
 		if err := pdf.Image(img, 0, 0, gopdf.PageSizeA4); err != nil {
 			return fmt.Errorf("ошибка вставки изображения %s: %w", img, err)
 		}

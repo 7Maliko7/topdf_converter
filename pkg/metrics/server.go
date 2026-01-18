@@ -4,13 +4,12 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func StartMetricsServer(ctx context.Context) error {
+func StartMetricsServer(ctx context.Context, errChan chan error) {
 	registerMetcrics()
 
 	mux := http.NewServeMux()
@@ -25,23 +24,20 @@ func StartMetricsServer(ctx context.Context) error {
 		<-ctx.Done()
 		log.Println("stopping prometheus server")
 
-		shutdownCtx, cancel := context.WithTimeout(
-			context.Background(),
-			5*time.Second,
-		)
-		defer cancel()
-
-		if err := server.Shutdown(shutdownCtx); err != nil {
+		if err := server.Shutdown(ctx); err != nil {
 			log.Printf("prometheus shutdown error: %v", err)
+			errChan <- err
 		}
 	}()
 
 	log.Println("Starting Preometheus metrics server on port 9090")
-	err := server.ListenAndServe()
-	if err == http.ErrServerClosed {
-		return nil
-	}
-	return err
+
+	go func() {
+		err := server.ListenAndServe()
+		if err != nil {
+			errChan <- err
+		}
+	}()
 }
 
 func registerMetcrics() {

@@ -2,7 +2,7 @@ package metrics
 
 import "github.com/prometheus/client_golang/prometheus"
 
-var(
+var (
 	UserCount = prometheus.NewCounter(
 		prometheus.CounterOpts{
 			Name: "users_count",
@@ -11,7 +11,7 @@ var(
 	)
 )
 
-var(
+var (
 	PhotoCount = prometheus.NewCounter(
 		prometheus.CounterOpts{
 			Name: "photo_count",
@@ -20,7 +20,7 @@ var(
 	)
 )
 
-var(
+var (
 	PdfCount = prometheus.NewCounter(
 		prometheus.CounterOpts{
 			Name: "pdf_count",
@@ -29,11 +29,11 @@ var(
 	)
 )
 
-var(
+var (
 	UserInteractionDuration = prometheus.NewHistogram(
 		prometheus.HistogramOpts{
-			Name: "interaction_duration",
-			Help: "Histogram of interacrion durations with the bot in seconds",
+			Name:    "interaction_duration",
+			Help:    "Histogram of interacrion durations with the bot in seconds",
 			Buckets: prometheus.DefBuckets,
 		},
 	)

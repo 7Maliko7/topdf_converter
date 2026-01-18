@@ -5,9 +5,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"sync"
-	"syscall"
-	"time"
 	bot "topdf_converter/internal/bot"
 	"topdf_converter/internal/config"
 	"topdf_converter/pkg/metrics"
@@ -24,43 +21,23 @@ func main() {
 	}
 	//goroutine
 	ctx, cancel := context.WithCancel(context.Background())
-	wg := &sync.WaitGroup{}
 
 	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(sig)
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := bot.Start(ctx, token); err != nil {
-			log.Printf("bot stopped with error: %v", err)
-		}
-	}()
+	errChan := make(chan error)
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := metrics.StartMetricsServer(ctx); err != nil {
-			log.Printf("prometheus stopped with error: %v", err)
-		}
-	}()
+	bot := bot.NewBot(token)
 
-	<-sig
-	log.Println("shutdown signal received")
+	bot.Start(ctx, token)
 
-	cancel()
-
-	done := make(chan struct{})
-	go func() {
-		wg.Wait()
-		close(done)
-	}()
-
+	metrics.StartMetricsServer(ctx, errChan)
 	select {
-	case <-done:
-		log.Println("shutdown completed")
-	case <-time.After(10 * time.Second):
-		log.Println("shutdown timeout")
+	case s := <-sig:
+		cancel()
+		log.Printf("shutdown completed: %v\n", s)
+	case er := <-errChan:
+		cancel()
+		log.Fatal(er)
 	}
-
 }

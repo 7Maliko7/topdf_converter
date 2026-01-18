@@ -27,8 +27,8 @@ func ReadConfig(filename string) {
 	}
 }
 
-func GetToken() (string, error){
-	if cfg == nil{
+func GetToken() (string, error) {
+	if cfg == nil {
 		return "", errors.New("empty token")
 	}
 	return cfg.TelegramTokenBot, nil

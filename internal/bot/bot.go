@@ -18,7 +18,11 @@ import (
 
 //var userState = make(map[int64]string)
 
-func Start(ctx context.Context, token string) error {
+type Bot struct {
+	bot *tgbotapi.BotAPI
+}
+
+func NewBot(token string) *Bot {
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		log.Fatalf("Ошибка при создании бота: %v", err)
@@ -27,32 +31,35 @@ func Start(ctx context.Context, token string) error {
 
 	bot.Debug = true
 	log.Printf("Authorized on account %s", bot.Self.UserName)
+	return &Bot{
+		bot: bot,
+	}
+}
 
+func (b *Bot) Start(ctx context.Context, token string) {
 	photoBuffer := NewPhotoBuffer()
-	handler := NewHandler(bot, photoBuffer)
+	handler := NewHandler(b.bot, photoBuffer)
 
 	kb := NewKeyboard()
 	kb.CreateButtons()
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
-	updates := bot.GetUpdatesChan(u)
+	updates := b.bot.GetUpdatesChan(u)
 
 	go func() {
-		<-ctx.Done()
-		bot.StopReceivingUpdates()
+		for {
+			select {
+			case <-ctx.Done():
+				log.Println("stop updates")
+				b.bot.StopReceivingUpdates()
+				return
+			case update := <-updates:
+				CheckUpdates(b.bot, update, handler, kb)
+			}
+		}
 	}()
 
-	for update := range updates {
-		select {
-		case <-ctx.Done():
-			return nil
-		default:
-			CheckUpdates(bot, update, handler, kb)
-		}
-
-	}
-	return nil
 }
 
 func CheckUpdates(bot *tgbotapi.BotAPI, update tgbotapi.Update, handler *Handler, kb *Keyboard) {
