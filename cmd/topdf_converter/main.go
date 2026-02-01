@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -11,10 +12,10 @@ import (
 )
 
 func main() {
-	config.ReadConfig("tokencfg.json")
-	token, err := config.GetToken()
+	cfg, err := config.ReadConfig("tokencfg.json")
 	if err != nil {
-		return
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -24,9 +25,13 @@ func main() {
 
 	errChan := make(chan error)
 
-	bot := bot.NewBot(token)
+	bot, err := bot.NewBot(*cfg)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
 
-	bot.Start(ctx, token)
+	bot.Start(ctx)
 
 	metrics.StartMetricsServer(ctx, errChan)
 	select {

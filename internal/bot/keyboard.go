@@ -2,6 +2,7 @@ package bot
 
 import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
+// В этом файле стоит подумать на предмет разделения на инкапсуляцию методов тгБотАпи и на use-case
 type Keyboard struct {
 	Buttons [][]tgbotapi.KeyboardButton
 }

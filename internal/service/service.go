@@ -37,7 +37,7 @@ func CreatePDFWithGoPDF(images []string, outputPath string) error {
 	for _, img := range images {
 		pdf.AddPage()
 		pageSize, x, y, err := reshape(img)
-		if err != nil{
+		if err != nil {
 			return err
 		}
 		if err := pdf.Image(img, x, y, pageSize); err != nil {
@@ -51,7 +51,7 @@ func CreatePDFWithGoPDF(images []string, outputPath string) error {
 	return nil
 }
 
-func reshape(filename string)(*gopdf.Rect, float64, float64, error) {
+func reshape(filename string) (*gopdf.Rect, float64, float64, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, 0, 0, err
@@ -71,19 +71,19 @@ func reshape(filename string)(*gopdf.Rect, float64, float64, error) {
 
 	margin := 40.0
 
-maxW := pageW - margin *2
-maxH := pageH - margin *2
+	maxW := pageW - margin*2
+	maxH := pageH - margin*2
 
 	scale := math.Min(maxW/origW, maxH/origH)
 
 	w := origW * scale
 	h := origH * scale
 
-	x := (pageW - w) /2
-	y := (pageH - h) /2
+	x := (pageW - w) / 2
+	y := (pageH - h) / 2
 
 	return &gopdf.Rect{
 		W: w,
 		H: h,
-	}, x, y,  nil
+	}, x, y, nil
 }

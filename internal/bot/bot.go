@@ -2,50 +2,48 @@ package bot
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
+	"topdf_converter/internal/config"
 	hndl "topdf_converter/internal/handler"
+	"topdf_converter/internal/storage/tg"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-//TODO
-/*
-Не начинать новый файл до очистки буфера
-Помощь прописать
-Растягивание картинок убрать
-Решить вопрос с не фотографиями
-*/
-
-//var userState = make(map[int64]string)
-
 type Bot struct {
-	bot *tgbotapi.BotAPI
+	bot     *tgbotapi.BotAPI
+	updates tgbotapi.UpdatesChannel
+	path    string
 }
 
-func NewBot(token string) *Bot {
-	bot, err := tgbotapi.NewBotAPI(token)
+func NewBot(cfg config.BotConfig) (*Bot, error) {
+	bot, err := tgbotapi.NewBotAPI(cfg.TelegramTokenBot)
 	if err != nil {
-		log.Fatalf("Ошибка при создании бота: %v", err)
+		return nil, err
 	}
-	fmt.Printf("Авторизация прошла успешно. Бот работает в режиме %s\n", bot.Self.UserName)
 
-	bot.Debug = true
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	fmt.Printf("Авторизация прошла успешно. Бот: %s", bot.Self.UserName)
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = cfg.TelegramBotTimeout
+	updates := bot.GetUpdatesChan(u)
+
+	bot.Debug = cfg.TelegramBotDebug
+
 	return &Bot{
-		bot: bot,
-	}
+		bot:     bot,
+		updates: updates,
+		path:    cfg.PdfPath,
+	}, nil
 }
 
-func (b *Bot) Start(ctx context.Context, token string) {
-	handler := hndl.NewHandler(b.bot)
+func (b *Bot) Start(ctx context.Context) {
+	storage := tg.NewStorage(b.bot)
+	handler := hndl.NewHandler(b.path, storage)
 
 	kb := NewKeyboard()
 	kb.CreateButtons()
-
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
-	updates := b.bot.GetUpdatesChan(u)
 
 	go func() {
 		for {
@@ -54,18 +52,19 @@ func (b *Bot) Start(ctx context.Context, token string) {
 				log.Println("stop updates")
 				b.bot.StopReceivingUpdates()
 				return
-			case update := <-updates:
-				CheckUpdates(b.bot, update, handler, kb)
+			case update := <-b.updates:
+				err := b.CheckUpdates(update, handler)
+				log.Println(err)
 			}
 		}
 	}()
 
 }
 
-func CheckUpdates(bot *tgbotapi.BotAPI, update tgbotapi.Update, handler *hndl.Handler, kb *Keyboard) {
+func (b *Bot) CheckUpdates(update tgbotapi.Update, handler *hndl.Handler) error {
 
 	if update.Message == nil {
-		return
+		return errors.New("No messages")
 	}
 	chatID := update.Message.Chat.ID
 	userID := update.Message.From.ID
@@ -84,24 +83,52 @@ func CheckUpdates(bot *tgbotapi.BotAPI, update tgbotapi.Update, handler *hndl.Ha
 	} else {
 		switch update.Message.Text {
 		case "Начать":
-			handler.Begin(chatID, userID)
+			err := handler.Begin(chatID, userID)
+			if err != nil {
+				return err
+			}
 		case "Очистить":
-			handler.Clear(chatID, userID)
+			err := handler.Clear(chatID, userID)
+			if err != nil {
+				return err
+			}
 		case "Завершить":
-			handler.Done(chatID, userID)
+			err := handler.Done(userID, chatID)
+			if err != nil {
+				return err
+			}
 		case "Новый файл":
-			handler.NewFile(chatID,userID)
+			err := handler.NewFile(chatID, userID)
+			if err != nil {
+				return err
+			}
 		case "Помощь":
-			handler.Help(chatID)
+			err := handler.Help(chatID)
+			if err != nil {
+				return err
+			}
 		case "/start":
-			handler.Start(chatID)
+			err := handler.Start(chatID)
+			if err != nil {
+				return err
+			}
 		case "/help":
-			handler.Help(chatID)
+			err := handler.Help(chatID)
+			if err != nil {
+				return err
+			}
 		case "/done":
-			handler.Done(chatID, userID)
+			err := handler.Done(userID, chatID)
+			if err != nil {
+				return err
+			}
 		case "/reset":
-			handler.Clear(chatID, userID)
+			err := handler.Clear(chatID, userID)
+			if err != nil {
+				return err
+			}
 		}
-		bot.Send(msg)
+		b.bot.Send(msg)
 	}
+	return nil
 }
