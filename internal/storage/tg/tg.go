@@ -1,6 +1,13 @@
 package tg
 
-import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+import (
+	"log"
+	"os"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+)
+
+const PDFOpenErrorMsg = "Не удалось открыть PDF."
 
 type Storage struct {
 	Bot *tgbotapi.BotAPI
@@ -28,18 +35,17 @@ func (s *Storage) GetFile(config tgbotapi.FileConfig) (*TgFile, error) {
 	}, nil
 }
 
-func (s *Storage) SendDocument(doc tgbotapi.DocumentConfig) error {
-	_, err := s.Bot.Send(doc)
+func (s *Storage) CreateDocument(chatID int64, pdfPath string) (*tgbotapi.DocumentConfig, string, error) {
+	f, err := os.Open(pdfPath)
 	if err != nil {
-		return err
+		log.Printf("Ошибка открытия PDF: %v", err)
+		return nil, PDFOpenErrorMsg, err
 	}
-	return nil
-}
+	defer f.Close()
 
-func (s *Storage) SendMessage(chatID int64, msg string) error {
-	_, err := s.Bot.Send(tgbotapi.NewMessage(chatID, msg))
-	if err != nil {
-		return err
-	}
-	return nil
+	doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+		Name:   "photos.pdf",
+		Reader: f,
+	})
+	return &doc, "", nil
 }

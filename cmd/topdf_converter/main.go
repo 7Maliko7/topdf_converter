@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"flag"
 	"log"
 	"os"
 	"os/signal"
@@ -12,9 +12,18 @@ import (
 )
 
 func main() {
-	cfg, err := config.ReadConfig("tokencfg.json")
+	// Хорошим тоном считается указывать название конфига через опцию запуска программы. Можно и хардкодить, но название уже нужно сменить.
+	botCfg := flag.String("config", "", "/configs")
+	flag.Parse()
+
+	if *botCfg == "" {
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	cfg, err := config.ReadConfig(*botCfg)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		log.Println(err)
 		os.Exit(1)
 	}
 
@@ -25,9 +34,9 @@ func main() {
 
 	errChan := make(chan error)
 
-	bot, err := bot.NewBot(*cfg)
+	bot, err := bot.NewBot(cfg)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		log.Println(err)
 		os.Exit(2)
 	}
 

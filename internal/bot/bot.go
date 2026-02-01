@@ -8,8 +8,14 @@ import (
 	"topdf_converter/internal/config"
 	hndl "topdf_converter/internal/handler"
 	"topdf_converter/internal/storage/tg"
+	"topdf_converter/pkg/metrics"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+)
+
+const (
+	PDFSendErrorMsg = "Ошибка при отправке PDF."
+	ReadyPDFMsg     = "Твой PDF готов."
 )
 
 type Bot struct {
@@ -18,7 +24,7 @@ type Bot struct {
 	path    string
 }
 
-func NewBot(cfg config.BotConfig) (*Bot, error) {
+func NewBot(cfg *config.BotConfig) (*Bot, error) {
 	bot, err := tgbotapi.NewBotAPI(cfg.TelegramTokenBot)
 	if err != nil {
 		return nil, err
@@ -43,7 +49,7 @@ func (b *Bot) Start(ctx context.Context) {
 	handler := hndl.NewHandler(b.path, storage)
 
 	kb := NewKeyboard()
-	kb.CreateButtons()
+	kb.CreateButtonTemplate()
 
 	go func() {
 		for {
@@ -62,9 +68,9 @@ func (b *Bot) Start(ctx context.Context) {
 }
 
 func (b *Bot) CheckUpdates(update tgbotapi.Update, handler *hndl.Handler) error {
-
 	if update.Message == nil {
-		return errors.New("No messages")
+		log.Println(errors.New("no messages"))
+		return nil
 	}
 	chatID := update.Message.Chat.ID
 	userID := update.Message.From.ID
@@ -83,52 +89,86 @@ func (b *Bot) CheckUpdates(update tgbotapi.Update, handler *hndl.Handler) error 
 	} else {
 		switch update.Message.Text {
 		case "Начать":
-			err := handler.Begin(chatID, userID)
-			if err != nil {
-				return err
-			}
+			_, err := b.bot.Send(tgbotapi.NewMessage(chatID, handler.Begin(userID)))
+			return err
 		case "Очистить":
-			err := handler.Clear(chatID, userID)
-			if err != nil {
-				return err
-			}
+			_, err := b.bot.Send(tgbotapi.NewMessage(chatID, handler.Clear(userID)))
+			return err
 		case "Завершить":
-			err := handler.Done(userID, chatID)
-			if err != nil {
-				return err
-			}
+			return b.Done(chatID, userID, handler)
 		case "Новый файл":
-			err := handler.NewFile(chatID, userID)
-			if err != nil {
-				return err
-			}
+			_, err := b.bot.Send(tgbotapi.NewMessage(chatID, handler.NewFile(userID)))
+			return err
 		case "Помощь":
-			err := handler.Help(chatID)
-			if err != nil {
-				return err
-			}
+			_, err := b.bot.Send(tgbotapi.NewMessage(chatID, handler.Help()))
+			return err
 		case "/start":
-			err := handler.Start(chatID)
-			if err != nil {
-				return err
-			}
+			_, err := b.bot.Send(tgbotapi.NewMessage(chatID, handler.Start()))
+			return err
 		case "/help":
-			err := handler.Help(chatID)
-			if err != nil {
-				return err
-			}
+			_, err := b.bot.Send(tgbotapi.NewMessage(chatID, handler.Help()))
+			return err
 		case "/done":
-			err := handler.Done(userID, chatID)
-			if err != nil {
-				return err
-			}
+			return b.Done(chatID, userID, handler)
 		case "/reset":
-			err := handler.Clear(chatID, userID)
-			if err != nil {
-				return err
-			}
+			_, err := b.bot.Send(tgbotapi.NewMessage(chatID, handler.Clear(userID)))
+			return err
 		}
-		b.bot.Send(msg)
+		_, err := b.bot.Send(msg)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
+}
+
+func (b *Bot) Done(chatID, userID int64, handler *hndl.Handler) error {
+	_, err := b.bot.Send(tgbotapi.NewMessage(chatID, handler.Process()))
+	if err != nil {
+		return err
+	}
+	doc, docMsg, err := handler.Done(userID, chatID)
+	if err != nil {
+		_, err := b.bot.Send(tgbotapi.NewMessage(chatID, docMsg))
+		if err != nil {
+			return err
+		}
+		return err
+	}
+
+	err = b.SendDocument(*doc, chatID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (b *Bot) SendDocument(doc tgbotapi.DocumentConfig, chatID int64) error {
+	for {
+		_, err := b.bot.Send(doc)
+		if err != nil {
+			tgErr, ok := err.(*tgbotapi.Error)
+			if !ok {
+				log.Printf("Ошибка отправки PDF: %v", err)
+				_, err = b.bot.Send(tgbotapi.NewMessage(chatID, PDFSendErrorMsg))
+				if err != nil {
+					log.Printf("Ошибка отправки сообщения: %v", err)
+					return err
+				}
+				return nil
+			}
+			if tgErr != nil {
+				log.Println(tgErr)
+				if tgErr.Code == 400 || tgErr.Message == "Bad Request: message text is empty" {
+					continue
+				}
+			}
+		}
+		metrics.PdfCount.Inc()
+		_, err = b.bot.Send(tgbotapi.NewMessage(chatID, ReadyPDFMsg))
+		if err != nil {
+			return err
+		}
+		return nil
+	}
 }

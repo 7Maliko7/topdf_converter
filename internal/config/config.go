@@ -18,8 +18,11 @@ func ReadConfig(filename string) (*BotConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
-
+	defer func() {
+		if closeErr := file.Close(); err != nil{
+			err = closeErr
+		}
+	}()
 	decoder := json.NewDecoder(file)
 	cfg := &BotConfig{}
 	err = decoder.Decode(cfg)
@@ -36,9 +39,6 @@ func ReadConfig(filename string) (*BotConfig, error) {
 func (bc *BotConfig) validate() error {
 	if bc.TelegramTokenBot == "" {
 		return errors.New("no bot config")
-	}
-	if !bc.TelegramBotDebug {
-		return errors.New("false debug")
 	}
 	if bc.TelegramBotTimeout == 0 {
 		return errors.New("no bot timeout")

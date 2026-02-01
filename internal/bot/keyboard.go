@@ -2,7 +2,6 @@ package bot
 
 import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
-// В этом файле стоит подумать на предмет разделения на инкапсуляцию методов тгБотАпи и на use-case
 type Keyboard struct {
 	Buttons [][]tgbotapi.KeyboardButton
 }
@@ -17,10 +16,6 @@ func (k *Keyboard) AddRow(buttons ...tgbotapi.KeyboardButton) {
 	k.Buttons = append(k.Buttons, buttons)
 }
 
-func CreateButton(text string) tgbotapi.KeyboardButton {
-	return tgbotapi.NewKeyboardButton(text)
-}
-
 func (k *Keyboard) GetMarkup() tgbotapi.ReplyKeyboardMarkup {
 	return tgbotapi.ReplyKeyboardMarkup{
 		Keyboard:       k.Buttons,
@@ -28,10 +23,10 @@ func (k *Keyboard) GetMarkup() tgbotapi.ReplyKeyboardMarkup {
 	}
 }
 
-func (k *Keyboard) CreateButtons() {
-	k.AddRow(CreateButton("Начать"))
-	k.AddRow(CreateButton("Очистить"))
-	k.AddRow(CreateButton("Завершить"))
-	k.AddRow(CreateButton("Новый файл"))
-	k.AddRow(CreateButton("Помощь"))
+func (k *Keyboard) CreateButtonTemplate() {
+	k.AddRow(tgbotapi.NewKeyboardButton("Начать"))
+	k.AddRow(tgbotapi.NewKeyboardButton("Очистить"))
+	k.AddRow(tgbotapi.NewKeyboardButton("Завершить"))
+	k.AddRow(tgbotapi.NewKeyboardButton("Новый файл"))
+	k.AddRow(tgbotapi.NewKeyboardButton("Помощь"))
 }
