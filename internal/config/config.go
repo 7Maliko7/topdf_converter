@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"os"
 )
 
@@ -19,8 +20,8 @@ func ReadConfig(filename string) (*BotConfig, error) {
 		return nil, err
 	}
 	defer func() {
-		if closeErr := file.Close(); err != nil{
-			err = closeErr
+		if closeErr := file.Close(); closeErr != nil{
+			log.Println(closeErr)
 		}
 	}()
 	decoder := json.NewDecoder(file)

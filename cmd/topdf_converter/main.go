@@ -12,8 +12,7 @@ import (
 )
 
 func main() {
-	// Хорошим тоном считается указывать название конфига через опцию запуска программы. Можно и хардкодить, но название уже нужно сменить.
-	botCfg := flag.String("config", "", "/configs")
+	botCfg := flag.String("config", "./configs/bot_config.json", "config path")
 	flag.Parse()
 
 	if *botCfg == "" {

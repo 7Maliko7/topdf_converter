@@ -75,13 +75,6 @@ func (b *Bot) CheckUpdates(update tgbotapi.Update, handler *hndl.Handler) error 
 	chatID := update.Message.Chat.ID
 	userID := update.Message.From.ID
 
-	// startTime := time.Now()
-	// defer func() {
-	// 	duration := time.Since(startTime).Seconds()
-	// 	metrics.UserInteractionDuration.Observe(duration)
-	// 	log.Printf("Interaction duration for user %d: %f seconds", chatID, duration)
-	// }()
-
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
 
 	if len(update.Message.Photo) > 0 {

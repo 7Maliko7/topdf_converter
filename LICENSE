@@ -23,17 +23,11 @@ SOFTWARE.
 licenses. This section summarizes those components and their licenses.
 See their repositories for text of these licenses.
 
-
-BSD 3-Clause "New" or "Revised" License
---------------------------------------
-pkg.go.dev/golang.org/x/image
-
- BSD-2-Clause license
---------------------------------------
-github.com/pkg/errors
-
 MIT License
 --------------------------------------
 github.com/signintech/gopdf
 github.com/go-telegram-bot-api/telegram-bot-api
-github.com/phpdave11/gofpdi
+
+Apache-2.0 License
+--------------------------------------
+github.com/prometheus/client_golang
