@@ -1,4 +1,4 @@
-module topdf_converter
+module github.com/7Maliko7/topdf_converter
 
 go 1.24.0
 

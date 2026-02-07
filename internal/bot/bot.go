@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"topdf_converter/internal/config"
-	hndl "topdf_converter/internal/handler"
-	"topdf_converter/internal/storage/tg"
-	"topdf_converter/pkg/metrics"
+	"github.com/7Maliko7/topdf_converter/internal/config"
+	hndl "github.com/7Maliko7/topdf_converter/internal/handler"
+	"github.com/7Maliko7/topdf_converter/internal/storage/tg"
+	"github.com/7Maliko7/topdf_converter/pkg/metrics"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )

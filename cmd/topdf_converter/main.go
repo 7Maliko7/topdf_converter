@@ -6,9 +6,9 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	bot "topdf_converter/internal/bot"
-	"topdf_converter/internal/config"
-	"topdf_converter/pkg/metrics"
+	bot "github.com/7Maliko7/topdf_converter/internal/bot"
+	"github.com/7Maliko7/topdf_converter/internal/config"
+	"github.com/7Maliko7/topdf_converter/pkg/metrics"
 )
 
 func main() {
