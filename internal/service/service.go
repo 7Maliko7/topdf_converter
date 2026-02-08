@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"fmt"
 	"image"
 	"io"
@@ -30,7 +31,7 @@ func DownloadPhoto(url, savePath string) error {
 	return nil
 }
 
-func CreatePDFWithGoPDF(images []string, outputPath string) error {
+func CreatePDFWithGoPDF(images []string) (*bytes.Buffer, error) {
 	pdf := &gopdf.GoPdf{}
 	pdf.Start(gopdf.Config{PageSize: *gopdf.PageSizeA4})
 
@@ -38,17 +39,18 @@ func CreatePDFWithGoPDF(images []string, outputPath string) error {
 		pdf.AddPage()
 		pageSize, x, y, err := reshape(img)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if err := pdf.Image(img, x, y, pageSize); err != nil {
-			return fmt.Errorf("ошибка вставки изображения %s: %w", img, err)
+			return nil, fmt.Errorf("ошибка вставки изображения %s: %w", img, err)
 		}
 	}
-
-	if err := pdf.WritePdf(outputPath); err != nil {
-		return fmt.Errorf("WritePdf error: %w", err)
+	var buf bytes.Buffer
+	_, err:= pdf.WriteTo(&buf)
+	if err != nil {
+		return nil, fmt.Errorf("WritePdf error: %w", err)
 	}
-	return nil
+	return &buf, nil
 }
 
 func reshape(filename string) (*gopdf.Rect, float64, float64, error) {

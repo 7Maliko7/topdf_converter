@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+
 	"github.com/7Maliko7/topdf_converter/internal/config"
 	hndl "github.com/7Maliko7/topdf_converter/internal/handler"
 	"github.com/7Maliko7/topdf_converter/internal/storage/tg"
@@ -32,6 +33,7 @@ func NewBot(cfg *config.BotConfig) (*Bot, error) {
 
 	fmt.Printf("Авторизация прошла успешно. Бот: %s", bot.Self.UserName)
 	u := tgbotapi.NewUpdate(0)
+
 	u.Timeout = cfg.TelegramBotTimeout
 	updates := bot.GetUpdatesChan(u)
 
@@ -141,7 +143,7 @@ func (b *Bot) SendDocument(doc tgbotapi.DocumentConfig, chatID int64) error {
 		_, err := b.bot.Send(doc)
 		if err != nil {
 			tgErr, ok := err.(*tgbotapi.Error)
-			if !ok {
+			if ok {
 				log.Printf("Ошибка отправки PDF: %v", err)
 				_, err = b.bot.Send(tgbotapi.NewMessage(chatID, PDFSendErrorMsg))
 				if err != nil {

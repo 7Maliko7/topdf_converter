@@ -20,7 +20,7 @@ func ReadConfig(filename string) (*BotConfig, error) {
 		return nil, err
 	}
 	defer func() {
-		if closeErr := file.Close(); closeErr != nil{
+		if closeErr := file.Close(); closeErr != nil {
 			log.Println(closeErr)
 		}
 	}()

@@ -1,8 +1,7 @@
 package tg
 
 import (
-	"log"
-	"os"
+	"bytes"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -35,17 +34,10 @@ func (s *Storage) GetFile(config tgbotapi.FileConfig) (*TgFile, error) {
 	}, nil
 }
 
-func (s *Storage) CreateDocument(chatID int64, pdfPath string) (*tgbotapi.DocumentConfig, string, error) {
-	f, err := os.Open(pdfPath)
-	if err != nil {
-		log.Printf("Ошибка открытия PDF: %v", err)
-		return nil, PDFOpenErrorMsg, err
-	}
-	defer f.Close()
-
+func (s *Storage) CreateDocument(chatID int64, buf *bytes.Buffer) (*tgbotapi.DocumentConfig, error) {
 	doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
 		Name:   "photos.pdf",
-		Reader: f,
+		Reader: buf,
 	})
-	return &doc, "", nil
+	return &doc, nil
 }
