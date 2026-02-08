@@ -1,2 +1,41 @@
-# topdf_converter
-Telegram bot for converting photos to PDF
+# Topdf_converter 
+Telegram-бот на Go, который принимает изображения и фотографии и объединяет их в один PDF-файл.
+
+## Возможности
+
+- Объединение нескольких изображений в один PDF
+- Отправка готового PDF пользователю
+
+## Запуск
+
+```bash
+git clone https://github.com/7Maliko7/topdf_converter
+cd topdf_converter
+go build -o topdf_converter ./cmd/topdf_converter/main.go
+. ./topdf_converter -config config.json
+```
+
+### Конфигурационный файл
+
+Параметры бота хранятся во внешнем конфигурационном файле.
+Путь к файлу передаётся через флаг при запуске приложения.
+
+Пример `config.json`:
+
+```json
+{
+    "telegram_bot_token": "your_token",
+    "telegram_bot_debug":true,
+    "telegram_bot_timeout_seconds": "60",
+    "pdf_path": "temp_photos"
+}
+```
+
+## Использование
+
+1. Запустите бота
+2. Нажмите кнопку "Начать"
+3. Отправьте несколько изображений или фотографий в нужном порядке
+4. Нажмите кнопку "Завершить" или отправьте команду `/done`
+5. Получите PDF-файл с изображениями
+6. При необходимости, нажмите кнопку "Новый файл"
