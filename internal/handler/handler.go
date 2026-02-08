@@ -88,20 +88,26 @@ func (h *Handler) Done(userID, chatID int64) (*tgbotapi.DocumentConfig, string, 
 		paths = append(paths, localPath)
 	}
 
-	pdfPath := filepath.Join(dir, "result.pdf")
-	if err := service.CreatePDFWithGoPDF(paths, pdfPath); err != nil {
+	buf, err := service.CreatePDFWithGoPDF(paths)
+	if err != nil {
 		log.Printf("Ошибка создания PDF: %v", err)
 		os.RemoveAll(dir)
 		return nil, PDFGenErrorMsg, err
 	}
 
-	doc, docMsg, err := h.storage.CreateDocument(chatID, pdfPath)
+	doc, err := h.storage.CreateDocument(chatID, buf)
 	if err != nil {
-		os.RemoveAll(dir)
-		return nil, docMsg, err
+		defer h.photoBuffer.clear(userID)
+		er := os.RemoveAll(dir)
+		if er != nil{
+			log.Printf("remove directory err: %v", er)
+			return nil, "", err
+		}
+		log.Printf("create document err: %v", err)
+		return nil, "", err
 	}
 
-	return doc, docMsg, nil
+	return doc, "", nil
 }
 
 func (h *Handler) Process() string {
